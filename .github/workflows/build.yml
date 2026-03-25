@@ -199,17 +199,18 @@ jobs:
           echo WiX path: %WIX%
           SET UsbDkVersion=%USBDK_MAJOR_VERSION%.%USBDK_MINOR_VERSION%.%USBDK_BUILD_NUMBER%
 
-          mkdir Install\x86 2>nul
-          mkdir Install\x64 2>nul
-          mkdir Install_Debug\x86 2>nul
-          mkdir Install_Debug\x64 2>nul
+          REM Create empty TMF file (trace message format) required by WiX
+          echo. > Install\UsbDk.tmf
 
-          pushd Tools\Installer
-          call buildmsi.bat NOSIGN
-          if %ERRORLEVEL% NEQ 0 (
-            echo MSI build failed
-            exit /B 1
-          )
+          pushd Install\x64
+
+          echo Building Win10 Release x64 MSI...
+          "%WIX%candle.exe" ..\..\Tools\Installer\UsbDkInstaller.wxs -out UsbDk.wixobj -dUsbDkVersion=%UsbDkVersion% -dConfig=Release -dUsbDk64Bit=1 -dWin10Only=1
+          if %ERRORLEVEL% NEQ 0 exit /B 1
+          "%WIX%light.exe" UsbDk.wixobj -out UsbDk_%UsbDkVersion%_x64.msi -sw1076
+          if %ERRORLEVEL% NEQ 0 exit /B 1
+
+          echo MSI built successfully: UsbDk_%UsbDkVersion%_x64.msi
           popd
 
       - name: Upload MSI installer
@@ -217,8 +218,6 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: UsbDk-Installer
-          path: |
-            Install/**/*.msi
-            Install_Debug/**/*.msi
+          path: Install/**/*.msi
           if-no-files-found: warn
           retention-days: 30

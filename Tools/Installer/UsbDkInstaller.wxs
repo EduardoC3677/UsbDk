@@ -69,6 +69,7 @@
       <Directory Id="$(var.UsbDkProgramFilesFolder)" Name="UsbDk Runtime Library">
         <Directory Id="UsbDk_Directory" Name="UsbDk Runtime Library">
 
+          <?ifndef Win10Only ?>
           <Component Id="UsbDk_Pre7" Guid="{4A0BC5BD-0EEF-4F19-8A31-C940126131D8}" Win64="$(var.UsbDkWin64)">
             <Condition>VersionNT &lt;= 600</Condition>
             <?define SourceSubPath= "XP$(var.Config)" ?>
@@ -105,9 +106,12 @@
             <?undef SourceSubPath ?>
             <?undef OsName ?>
           </Component>
+          <?endif ?>
 
           <Component Id="UsbDk_10" Guid="{34AB6305-4379-4E32-A070-8B0612521AC8}" Win64="$(var.UsbDkWin64)">
+            <?ifndef Win10Only ?>
             <Condition>VersionNT &gt;= 603 AND WIN10FOUND AND NOT WIN11FOUND</Condition>
+            <?endif ?>
             <?define SourceSubPath= "Win10$(var.Config)" ?>
             <?define OsName= "10" ?>
             <?include UsbDkFiles.wxi ?>
@@ -115,6 +119,7 @@
             <?undef OsName ?>
           </Component>
 
+          <?ifndef Win10Only ?>
           <Component Id="UsbDk_11" Guid="{5B1C8E72-9D3A-4F67-A2E1-8C6D9F0B4E53}" Win64="$(var.UsbDkWin64)">
             <Condition>VersionNT &gt;= 603 AND WIN11FOUND</Condition>
             <?define SourceSubPath= "Win11$(var.Config)" ?>
@@ -123,6 +128,7 @@
             <?undef SourceSubPath ?>
             <?undef OsName ?>
           </Component>
+          <?endif ?>
 
           <Component Id="UsbDk_TMF" Guid="{2A06187F-4B67-4DBD-86DA-E6FB081CD1B6}" Win64="$(var.UsbDkWin64)">
             <File Id="UsbDk_TMF" Name="UsbDk.tmf" Source="..\UsbDk.tmf" Vital="yes" KeyPath="no" DiskId="1" ProcessorArchitecture="x64" />
@@ -162,12 +168,16 @@
     </InstallExecuteSequence>
 
     <Feature Id="ProductFeature" Title="UsbDk Runtime Libraries" Level="1">
+      <?ifndef Win10Only ?>
       <ComponentRef Id="UsbDk_Pre7" />
       <ComponentRef Id="UsbDk_7" />
       <ComponentRef Id="UsbDk_8" />
       <ComponentRef Id="UsbDk_81" />
+      <?endif ?>
       <ComponentRef Id="UsbDk_10" />
+      <?ifndef Win10Only ?>
       <ComponentRef Id="UsbDk_11" />
+      <?endif ?>
       <ComponentRef Id="UsbDk_TMF" />
     </Feature>
   </Product>

@@ -10,16 +10,21 @@
     </File>
 
     <?ifdef UsbDk64Bit ?>
+      <?ifndef Win10Only ?>
 
         <File Id="WOW64_UsbDkHelper.dll$(var.OsName)" Name="UsbDkHelper_x86.dll" Source="..\x86\$(var.SourceSubPath)\UsbDk_Package\UsbDkHelper.dll" Vital="yes" KeyPath="no" DiskId="1" ProcessorArchitecture="x64">
             <CopyFile Id="WOW64_UsbDkHelper.dll$(var.OsName)" DestinationProperty ="$(var.SystemWOW64Dir)" DestinationName="UsbDkHelper.dll"/>
         </File>
 
+      <?endif?>
     <?endif?>
 
     <File Id="UsbDkController.exe$(var.OsName)" Name="UsbDkController.exe" Source="$(var.SourceSubPath)\UsbDk_Package\UsbDkController.exe" Vital="yes" KeyPath="no" DiskId="1" ProcessorArchitecture="x64" />
     <File Id="UsbDkInstHelper.exe$(var.OsName)" Name="UsbDkInstHelper.exe" Source="$(var.SourceSubPath)\UsbDk_Package\UsbDkInstHelper.exe" Vital="yes" KeyPath="no" DiskId="1" ProcessorArchitecture="x64" />
+
+    <?ifndef Win10Only ?>
     <File Id="WdfCoinstaller$(var.CoinstallerVersion).dll$(var.OsName)" Name="WdfCoinstaller$(var.CoinstallerVersion).dll" Source="$(var.SourceSubPath)\UsbDk_Package\WdfCoinstaller$(var.CoinstallerVersion).dll" Vital="yes" KeyPath="no" DiskId="1" ProcessorArchitecture="x64"/>
+    <?endif ?>
 
     <?ifdef CoinstallerVersion ?>
         <?undef CoinstallerVersion ?>
