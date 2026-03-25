@@ -18,7 +18,7 @@ jobs:
     strategy:
       matrix:
         configuration: [Release]
-        platform: [x64, Win32]
+        platform: [x64]
 
     steps:
       - name: Checkout repository
@@ -166,10 +166,6 @@ jobs:
       - name: Build all configurations for MSI
         shell: cmd
         run: |
-          echo Building Win10 Release x86...
-          msbuild UsbDk.sln /p:Configuration="Win10 Release" /p:Platform="Win32" /t:Rebuild /m
-          if %ERRORLEVEL% NEQ 0 exit /B 1
-
           echo Building Win10 Release x64...
           msbuild UsbDk.sln /p:Configuration="Win10 Release" /p:Platform="x64" /t:Rebuild /m
           if %ERRORLEVEL% NEQ 0 exit /B 1
@@ -177,10 +173,14 @@ jobs:
       - name: Install WiX Toolset
         shell: powershell
         run: |
-          choco install wixtoolset --version=3.14.1 -y --no-progress
-          # Find WiX installation
+          # Check if WiX is already installed on the runner
           $wixDir = Get-ChildItem "${env:ProgramFiles(x86)}" -Filter "WiX Toolset*" -Directory |
             Sort-Object Name -Descending | Select-Object -First 1
+          if (-not $wixDir) {
+            choco install wixtoolset -y --no-progress
+            $wixDir = Get-ChildItem "${env:ProgramFiles(x86)}" -Filter "WiX Toolset*" -Directory |
+              Sort-Object Name -Descending | Select-Object -First 1
+          }
           if ($wixDir) {
             $wixBin = Join-Path $wixDir.FullName "bin\"
             Write-Host "WiX found at: $wixBin"
@@ -199,17 +199,18 @@ jobs:
           echo WiX path: %WIX%
           SET UsbDkVersion=%USBDK_MAJOR_VERSION%.%USBDK_MINOR_VERSION%.%USBDK_BUILD_NUMBER%
 
-          mkdir Install\x86 2>nul
-          mkdir Install\x64 2>nul
-          mkdir Install_Debug\x86 2>nul
-          mkdir Install_Debug\x64 2>nul
+          REM Create empty TMF file (trace message format) required by WiX
+          echo. > Install\UsbDk.tmf
 
-          pushd Tools\Installer
-          call buildmsi.bat NOSIGN
-          if %ERRORLEVEL% NEQ 0 (
-            echo MSI build failed
-            exit /B 1
-          )
+          pushd Install\x64
+
+          echo Building Win10 Release x64 MSI...
+          "%WIX%candle.exe" ..\..\Tools\Installer\UsbDkInstaller.wxs -out UsbDk.wixobj -dUsbDkVersion=%UsbDkVersion% -dConfig=Release -dUsbDk64Bit=1 -dWin10Only=1
+          if %ERRORLEVEL% NEQ 0 exit /B 1
+          "%WIX%light.exe" UsbDk.wixobj -out UsbDk_%UsbDkVersion%_x64.msi -sw1076
+          if %ERRORLEVEL% NEQ 0 exit /B 1
+
+          echo MSI built successfully: UsbDk_%UsbDkVersion%_x64.msi
           popd
 
       - name: Upload MSI installer
@@ -217,8 +218,6 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: UsbDk-Installer
-          path: |
-            Install/**/*.msi
-            Install_Debug/**/*.msi
+          path: Install/**/*.msi
           if-no-files-found: warn
           retention-days: 30
