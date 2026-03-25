@@ -61,7 +61,7 @@
 
     <Property Id="WIN11FOUND" Secure="yes">
       <DirectorySearch Id="searchSystem11" Path="[SystemFolder]" Depth="0">
-        <FileSearch Id="searchFile11" Name="advapi32.dll" MinVersion="6.3.22000.0"/>
+        <FileSearch Id="searchFile11" Name="advapi32.dll" MinVersion="10.0.22000.0"/>
       </DirectorySearch>
     </Property>
 

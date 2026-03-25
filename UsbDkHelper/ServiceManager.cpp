@@ -54,6 +54,14 @@ void ServiceManager::DeleteServiceObject(const tstring &ServiceName)
     {
         WaitForServiceStop(schService);
     }
+    else
+    {
+        auto err = GetLastError();
+        if (err != ERROR_SERVICE_NOT_ACTIVE)
+        {
+            throw UsbDkServiceManagerFailedException(TEXT("ControlService(STOP) failed during delete"), err);
+        }
+    }
 
     if (!DeleteService(schService))
     {
