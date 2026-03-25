@@ -18,6 +18,9 @@ Common property definitions used by all drivers:
   <PropertyGroup Condition="'$(TargetVersion)'=='Windows10'">
   <_NT_TARGET_VERSION>0x0A00</_NT_TARGET_VERSION>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(TargetVersion)'=='Windows11'">
+    <_NT_TARGET_VERSION>0x0A00</_NT_TARGET_VERSION>
+  </PropertyGroup>
   <PropertyGroup Condition="'$(TargetVersion)'=='WindowsV6.3'">
     <_NT_TARGET_VERSION>0x0603</_NT_TARGET_VERSION>
   </PropertyGroup>

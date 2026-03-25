@@ -48,7 +48,13 @@ void ServiceManager::CreateServiceObject(const tstring &ServiceName, const tstri
 void ServiceManager::DeleteServiceObject(const tstring &ServiceName)
 {
     SCMHandleHolder schService(OpenServiceObject(ServiceName));
-    WaitForServiceStop(schService);
+
+    SERVICE_STATUS serviceStatus;
+    if (ControlService(schService, SERVICE_CONTROL_STOP, &serviceStatus))
+    {
+        WaitForServiceStop(schService);
+    }
+
     if (!DeleteService(schService))
     {
         throw UsbDkServiceManagerFailedException(TEXT("DeleteService failed"));
@@ -69,6 +75,18 @@ void ServiceManager::StartServiceObject(const tstring &ServiceName)
 void ServiceManager::StopServiceObject(const tstring & ServiceName)
 {
     SCMHandleHolder schService(OpenServiceObject(ServiceName));
+
+    SERVICE_STATUS serviceStatus;
+    if (!ControlService(schService, SERVICE_CONTROL_STOP, &serviceStatus))
+    {
+        auto err = GetLastError();
+        if (err != ERROR_SERVICE_NOT_ACTIVE)
+        {
+            throw UsbDkServiceManagerFailedException(TEXT("ControlService(STOP) failed"), err);
+        }
+        return;
+    }
+
     WaitForServiceStop(schService);
 }
 

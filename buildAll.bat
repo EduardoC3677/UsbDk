@@ -8,7 +8,7 @@ if [%2] EQU [NOSIGN] (SET DEBUG_CFG=Debug_NoSign) ELSE (SET DEBUG_CFG=Debug)
 
 del *.log
 
-for %%x in (Win7, Win8, Win8.1, Win10, XP) do (
+for %%x in (Win7, Win8, Win8.1, Win10, Win11, XP) do (
   for %%y in (%DEBUG_CFG%, Release) do (
     for %%z in (win32, x64) do (
       call tools\vs_run.bat UsbDk.sln /Rebuild "%%x %%y|%%z" /Out build%%y_%%x_%%z.log
@@ -32,6 +32,8 @@ goto BUILD_MSI
 
 :maketmf
 del *.tmf *.mof
+call :make1tmf x64\Win11%1
+call :make1tmf x86\Win11%1
 call :make1tmf x64\Win10%1
 call :make1tmf x86\Win10%1
 call :make1tmf x64\Win8.1%1

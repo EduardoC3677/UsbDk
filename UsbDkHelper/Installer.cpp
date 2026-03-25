@@ -161,7 +161,7 @@ void UsbDkInstaller::addUsbDkToRegistry()
 
         tstringlist filtersList;
         buildStringListFromVector(filtersList, valVector);
-        buildNewListWithoutEement(newfiltersList, filtersList, USBDK_DRIVER_NAME);
+        buildNewListWithoutElement(newfiltersList, filtersList, USBDK_DRIVER_NAME);
     }
 
     newfiltersList.push_back(USBDK_DRIVER_NAME);
@@ -192,7 +192,7 @@ void UsbDkInstaller::removeUsbDkFromRegistry()
 
     if (errCode != ERROR_FILE_NOT_FOUND && errCode != ERROR_SUCCESS)
     {
-        throw UsbDkInstallerFailedException(TEXT("addUsbDkToRegistry failed in ReadMultiString!"), errCode);
+        throw UsbDkInstallerFailedException(TEXT("removeUsbDkFromRegistry failed in ReadMultiString!"), errCode);
     }
 
     if (valLen)
@@ -203,7 +203,7 @@ void UsbDkInstaller::removeUsbDkFromRegistry()
 
         if (errCode != ERROR_FILE_NOT_FOUND && errCode != ERROR_SUCCESS)
         {
-            throw UsbDkInstallerFailedException(TEXT("addUsbDkToRegistry failed in ReadMultiString!"), errCode);
+            throw UsbDkInstallerFailedException(TEXT("removeUsbDkFromRegistry failed in ReadMultiString!"), errCode);
         }
 
         if (!valLen)
@@ -215,7 +215,7 @@ void UsbDkInstaller::removeUsbDkFromRegistry()
         buildStringListFromVector(filtersList, valVector);
 
         tstringlist newfiltersList;
-        buildNewListWithoutEement(newfiltersList, filtersList, USBDK_DRIVER_NAME);
+        buildNewListWithoutElement(newfiltersList, filtersList, USBDK_DRIVER_NAME);
 
         valVector.clear();
         buildMultiStringVectorFromList(valVector, newfiltersList);
@@ -233,7 +233,7 @@ void UsbDkInstaller::removeUsbDkFromRegistry()
 
 void UsbDkInstaller::buildMultiStringVectorFromList(vector<TCHAR> &valVector, tstringlist &newfiltersList)
 {
-    for (auto filter : newfiltersList)
+    for (const auto &filter : newfiltersList)
     {
         std::copy(filter.begin(), filter.end(), std::back_inserter(valVector));
         valVector.push_back(TEXT('\0'));
@@ -268,11 +268,11 @@ void UsbDkInstaller::buildStringListFromVector(tstringlist &filtersList, vector<
     } while (!currFilter.empty());
 }
 
-void UsbDkInstaller::buildNewListWithoutEement(tstringlist &newfiltersList, tstringlist &filtersList, tstring element)
+void UsbDkInstaller::buildNewListWithoutElement(tstringlist &newfiltersList, tstringlist &filtersList, const tstring &element)
 {
-    for (auto filter : filtersList)
+    for (const auto &filter : filtersList)
     {
-        if (filter != USBDK_DRIVER_NAME)
+        if (filter != element)
         {
             newfiltersList.push_back(filter);
         }
