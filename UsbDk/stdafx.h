@@ -42,6 +42,10 @@ extern "C"
 #pragma warning(pop)
 #endif
 
+// Suppress ExAllocatePoolWithTag deprecation warning (C4996) - the driver uses
+// the legacy API deliberately for broad Windows 10 version compatibility
+#pragma warning(disable: 4996)
+
 #if !TARGET_OS_WIN_XP && (NTDDI_VERSION >= NTDDI_WIN8)
 #define USBDK_NON_PAGED_POOL    NonPagedPoolNx
 #else
