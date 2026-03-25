@@ -7,6 +7,11 @@ on:
     branches: [ master ]
   workflow_dispatch:
 
+env:
+  USBDK_MAJOR_VERSION: '1'
+  USBDK_MINOR_VERSION: '0'
+  USBDK_BUILD_NUMBER: '22'
+
 jobs:
   build:
     runs-on: windows-latest
@@ -141,7 +146,7 @@ jobs:
             echo WiX not configured, skipping MSI build
             exit /B 0
           )
-          SET UsbDkVersion=1.0.22
+          SET UsbDkVersion=%USBDK_MAJOR_VERSION%.%USBDK_MINOR_VERSION%.%USBDK_BUILD_NUMBER%
           mkdir Install\x86 2>nul
           mkdir Install\x64 2>nul
           mkdir Install_Debug\x86 2>nul
