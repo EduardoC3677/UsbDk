@@ -138,10 +138,9 @@ ULONG CRulesManager::DeleteAllRules(ULONG& notDeleted)
     for (const auto &SubKey : m_RegAccess)
         subkeys.push_back(SubKey);
 
-    while (subkeys.size())
+    for (const auto &subkey : subkeys)
     {
-        m_RegAccess.DeleteKey(subkeys.front().c_str()) ? deleted++ : notDeleted++;
-        subkeys.erase(subkeys.begin());
+        m_RegAccess.DeleteKey(subkey.c_str()) ? deleted++ : notDeleted++;
     }
     return deleted;
 }

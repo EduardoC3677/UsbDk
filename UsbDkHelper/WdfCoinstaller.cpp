@@ -28,7 +28,7 @@
 
 #define WDF_SECTION_NAME    TEXT("UsbDk.NT.Wdf")
 #if !TARGET_OS_WIN_XP
-#define COINSTALLER_VERSION TEXT("01011")
+#define COINSTALLER_VERSION TEXT("01015")
 #else
 #define COINSTALLER_VERSION TEXT("01009")
 #endif
@@ -66,7 +66,7 @@ void WdfCoinstaller::loadWdfCoinstaller()
         m_pfnWdfPreDeviceInstallEx = getCoinstallerFunction<PFN_WDFPREDEVICEINSTALLEX>("WdfPreDeviceInstallEx");
         m_pfnWdfPostDeviceInstall = getCoinstallerFunction<PFN_WDFPOSTDEVICEINSTALL>("WdfPostDeviceInstall");
         m_pfnWdfPreDeviceRemove = getCoinstallerFunction<PFN_WDFPREDEVICEREMOVE>("WdfPreDeviceRemove");
-        m_pfnWdfPostDeviceRemove = getCoinstallerFunction<PFN_WDFPREDEVICEREMOVE>("WdfPostDeviceRemove");
+        m_pfnWdfPostDeviceRemove = getCoinstallerFunction<PFN_WDFPOSTDEVICEREMOVE>("WdfPostDeviceRemove");
     }
     catch (...)
     {

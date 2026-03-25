@@ -123,7 +123,7 @@ tstring UsbDkCRTErrorException::GetErrorString(DWORD dwErrorCode)
 
 #ifdef WIN32
 UsbDkW32ErrorException::UsbDkW32ErrorException(DWORD dwErrorCode)
-: UsbDkNumErrorException(GetErrorString(m_dwErrorCode) + TEXT("\n"), dwErrorCode)
+: UsbDkNumErrorException(GetErrorString(dwErrorCode) + TEXT("\n"), dwErrorCode)
 {
 
 }

@@ -1,6 +1,6 @@
 <Include>
     <?ifndef CoinstallerVersion ?>
-        <?define CoinstallerVersion= "01011" ?>
+        <?define CoinstallerVersion= "01015" ?>
     <?endif?>
 
     <File Id="UsbDk.sys$(var.OsName)" Name="UsbDk.sys" Source="$(var.SourceSubPath)\UsbDk_Package\UsbDk.sys" Vital="yes" KeyPath="yes" DiskId="1" ProcessorArchitecture="x64"/>

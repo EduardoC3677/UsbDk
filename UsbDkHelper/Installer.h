@@ -70,7 +70,7 @@ private:
     void    addUsbDkToRegistry();
     void    removeUsbDkFromRegistry();
     void    buildStringListFromVector(tstringlist &filtersList, vector<TCHAR> &valVector);
-    void    buildNewListWithoutEement(tstringlist &newfiltersList, tstringlist &filtersList, tstring element);
+    void    buildNewListWithoutElement(tstringlist &newfiltersList, tstringlist &filtersList, const tstring &element);
     void    buildMultiStringVectorFromList(vector<TCHAR> &valVector, tstringlist &newfiltersList);
     void    validatePlatform();
     bool    isWow64B();
