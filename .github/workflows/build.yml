@@ -18,7 +18,7 @@ jobs:
     strategy:
       matrix:
         configuration: [Release]
-        platform: [x64, Win32]
+        platform: [x64]
 
     steps:
       - name: Checkout repository
@@ -166,10 +166,6 @@ jobs:
       - name: Build all configurations for MSI
         shell: cmd
         run: |
-          echo Building Win10 Release x86...
-          msbuild UsbDk.sln /p:Configuration="Win10 Release" /p:Platform="Win32" /t:Rebuild /m
-          if %ERRORLEVEL% NEQ 0 exit /B 1
-
           echo Building Win10 Release x64...
           msbuild UsbDk.sln /p:Configuration="Win10 Release" /p:Platform="x64" /t:Rebuild /m
           if %ERRORLEVEL% NEQ 0 exit /B 1
