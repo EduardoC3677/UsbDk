@@ -27,41 +27,37 @@
 string __wstring2string(const wstring& str)
 {
    size_t buf_length = str.length() + 1;
-   char* buf = new (std::nothrow) char[buf_length];
+   unique_ptr<char[]> buf(new (std::nothrow) char[buf_length]);
    size_t nCount;
 
-   if(nullptr == buf)
+   if(!buf)
    {
        return string();
    }
 
-   if( 0 != wcstombs_s(&nCount, buf, buf_length, str.c_str(), buf_length) )
+   if( 0 != wcstombs_s(&nCount, buf.get(), buf_length, str.c_str(), buf_length) )
    {// Return empty string in case of failure
         buf[0] = 0;
    }
 
-   string result(buf);
-   delete [] buf;
-   return result;
+   return string(buf.get());
 }
 
 wstring __string2wstring(const string& str)
 {
     size_t buf_length = str.length() + 1;
-    wchar_t* buf = new (std::nothrow) wchar_t[buf_length];
+    unique_ptr<wchar_t[]> buf(new (std::nothrow) wchar_t[buf_length]);
     size_t nCount;
 
-    if(nullptr == buf)
+    if(!buf)
     {
         return wstring();
     }
 
-    if( 0 != mbstowcs_s(&nCount, buf, buf_length, str.c_str(), buf_length) )
+    if( 0 != mbstowcs_s(&nCount, buf.get(), buf_length, str.c_str(), buf_length) )
     {// Return empty string in case of failure
         buf[0] = 0;
     }
 
-    wstring result(buf);
-    delete [] buf;
-    return result;
+    return wstring(buf.get());
 }

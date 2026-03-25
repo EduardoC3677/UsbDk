@@ -68,7 +68,7 @@ BOOL UsbDkRegAccess::SetRegPath(LPCTSTR lpzNewRegPath)
     }
 
     m_lpsRegPath = _tcsdup(lpzNewRegPath);
-    return (m_lpsRegPath != nullptr)?TRUE:FALSE;
+    return m_lpsRegPath != nullptr;
 }
 
 HKEY UsbDkRegAccess::GetPrimaryKey(VOID)
@@ -89,7 +89,7 @@ BOOL UsbDkRegAccess::GetRegPath(LPTSTR lpsBuffer, DWORD dwNumberOfElements)
         return TRUE;
     }
 
-    return (_tcscpy_s(lpsBuffer, dwNumberOfElements, m_lpsRegPath) == 0)?TRUE:FALSE;
+    return _tcscpy_s(lpsBuffer, dwNumberOfElements, m_lpsRegPath) == 0;
 }
 
 DWORD UsbDkRegAccess::ReadDWord(LPCTSTR lpzValueName,

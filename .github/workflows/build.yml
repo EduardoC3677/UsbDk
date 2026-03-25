@@ -14,12 +14,11 @@ env:
 
 jobs:
   build:
-    runs-on: windows-latest
+    runs-on: windows-2022
     strategy:
       matrix:
         configuration: [Release]
         platform: [x64, Win32]
-        target: [Win10]
 
     steps:
       - name: Checkout repository
@@ -28,82 +27,115 @@ jobs:
       - name: Setup MSBuild
         uses: microsoft/setup-msbuild@v2
 
-      - name: Install Windows SDK and WDK
+      - name: Install WDK
         shell: powershell
         run: |
-          # Install WDK for Windows 11 (includes Win10 targets)
-          choco install windowsdriverkit11 -y --no-progress 2>$null
-          if ($LASTEXITCODE -ne 0) {
-            Write-Host "WDK choco install returned $LASTEXITCODE, trying direct install..."
-          }
-          # Verify WDK installation
-          $wdkPath = "C:\Program Files (x86)\Windows Kits\10"
-          if (Test-Path $wdkPath) {
-            Write-Host "WDK found at: $wdkPath"
-            Get-ChildItem "$wdkPath\build" -ErrorAction SilentlyContinue | ForEach-Object { Write-Host "  $_" }
+          $ErrorActionPreference = "Stop"
+          $wdk = "${env:ProgramFiles(x86)}\Windows Kits\10"
+
+          # Download WDK for Windows 11 22H2 (10.0.22621) — confirmed VS2022 support
+          Write-Host "Downloading WDK 10.0.22621 setup..."
+          Invoke-WebRequest -Uri "https://go.microsoft.com/fwlink/?linkid=2196230" `
+            -OutFile "$env:TEMP\wdksetup.exe" -UseBasicParsing
+
+          Write-Host "Installing WDK (this takes a few minutes)..."
+          $proc = Start-Process -Wait -PassThru -FilePath "$env:TEMP\wdksetup.exe" `
+            -ArgumentList "/features + /quiet /norestart /ceip off"
+          Write-Host "WDK installer exit code: $($proc.ExitCode)"
+
+          # Verify kernel-mode headers exist
+          $kmHeaders = Get-ChildItem "$wdk\Include\*\km\ntifs.h" -ErrorAction SilentlyContinue
+          if ($kmHeaders) {
+            Write-Host "OK: ntifs.h found at $($kmHeaders[0].FullName)"
           } else {
-            Write-Host "WDK not found at expected path"
+            Write-Error "FATAL: WDK km headers (ntifs.h) not found after installation"
           }
 
-      - name: Build driver and user-mode components
+          # Install the WDK VSIX for VS2022 if not already registered
+          $vs = "${env:ProgramFiles}\Microsoft Visual Studio\2022\Enterprise"
+          $toolset = Get-ChildItem "$vs\MSBuild" -Filter "WindowsKernelModeDriver10.0" `
+            -Recurse -Directory -ErrorAction SilentlyContinue
+          if ($toolset) {
+            Write-Host "OK: WindowsKernelModeDriver10.0 toolset found at $($toolset[0].FullName)"
+          } else {
+            Write-Host "Toolset not auto-registered, installing WDK VSIX explicitly..."
+            $vsixFiles = Get-ChildItem "$wdk\Vsix" -Filter "*.vsix" -Recurse -ErrorAction SilentlyContinue
+            $vsixInstaller = "$vs\Common7\IDE\VSIXInstaller.exe"
+            foreach ($vsix in $vsixFiles) {
+              Write-Host "  Installing: $($vsix.FullName)"
+              $p = Start-Process -Wait -PassThru -FilePath $vsixInstaller `
+                -ArgumentList "/q /a `"$($vsix.FullName)`""
+              Write-Host "  Exit code: $($p.ExitCode)"
+            }
+            # Verify again
+            $toolset2 = Get-ChildItem "$vs\MSBuild" -Filter "WindowsKernelModeDriver10.0" `
+              -Recurse -Directory -ErrorAction SilentlyContinue
+            if ($toolset2) {
+              Write-Host "OK: Toolset registered after VSIX install"
+            } else {
+              Write-Host "WARNING: Toolset still not found — build may fail"
+            }
+          }
+
+      - name: Build solution
         shell: cmd
         run: |
-          msbuild UsbDk.sln /p:Configuration="${{ matrix.target }} ${{ matrix.configuration }}" /p:Platform="${{ matrix.platform }}" /t:Rebuild /m
-        continue-on-error: true
+          msbuild UsbDk.sln /p:Configuration="Win10 ${{ matrix.configuration }}" /p:Platform="${{ matrix.platform }}" /t:Rebuild /m
 
-      - name: Collect build artifacts
-        if: always()
+      - name: Collect build outputs
+        if: success()
         shell: powershell
         run: |
           $outDir = "artifacts"
           New-Item -ItemType Directory -Force -Path $outDir | Out-Null
 
-          # Collect driver package files
-          $patterns = @("*.sys", "*.dll", "*.exe", "*.inf", "*.cat")
-          $searchDirs = @(
-            "${{ matrix.target }}${{ matrix.configuration }}",
-            "${{ matrix.platform }}\${{ matrix.target }}${{ matrix.configuration }}"
+          $patterns = @("*.sys", "*.dll", "*.exe", "*.inf", "*.cat", "*.pdb")
+          $searchPaths = @(
+            "Install\${{ matrix.platform == 'x64' && 'x64' || 'x86' }}\Win10${{ matrix.configuration }}",
+            "Install_Debug\${{ matrix.platform == 'x64' && 'x64' || 'x86' }}\Win10${{ matrix.configuration }}"
           )
 
-          foreach ($dir in $searchDirs) {
+          foreach ($dir in $searchPaths) {
             if (Test-Path $dir) {
+              Write-Host "Collecting from: $dir"
               foreach ($pattern in $patterns) {
                 Get-ChildItem -Path $dir -Filter $pattern -Recurse -ErrorAction SilentlyContinue |
                   ForEach-Object {
-                    $dest = Join-Path $outDir $_.Name
-                    Copy-Item $_.FullName $dest -Force
-                    Write-Host "Collected: $($_.FullName) -> $dest"
+                    Copy-Item $_.FullName (Join-Path $outDir $_.Name) -Force
+                    Write-Host "  $($_.Name)"
                   }
               }
             }
           }
 
-          # Also check for MSI installer outputs
-          if (Test-Path "Install") {
-            Get-ChildItem -Path "Install" -Filter "*.msi" -Recurse -ErrorAction SilentlyContinue |
-              ForEach-Object {
-                Copy-Item $_.FullName (Join-Path $outDir $_.Name) -Force
-                Write-Host "Collected MSI: $($_.FullName)"
-              }
+          # Also collect from UsbDk_Package output
+          $pkgDir = "UsbDk Package\Win10 ${{ matrix.configuration }}"
+          if (Test-Path $pkgDir) {
+            Write-Host "Collecting from package dir: $pkgDir"
+            foreach ($pattern in $patterns) {
+              Get-ChildItem -Path $pkgDir -Filter $pattern -Recurse -ErrorAction SilentlyContinue |
+                ForEach-Object {
+                  Copy-Item $_.FullName (Join-Path $outDir $_.Name) -Force
+                  Write-Host "  $($_.Name)"
+                }
+            }
           }
 
-          # List what we collected
-          Write-Host "`nCollected artifacts:"
-          Get-ChildItem $outDir | ForEach-Object { Write-Host "  $($_.Name) ($($_.Length) bytes)" }
+          $count = (Get-ChildItem $outDir -File).Count
+          Write-Host "`nTotal artifacts collected: $count"
 
       - name: Upload build artifacts
-        if: always()
+        if: success()
         uses: actions/upload-artifact@v4
         with:
-          name: UsbDk-${{ matrix.target }}-${{ matrix.configuration }}-${{ matrix.platform }}
+          name: UsbDk-Win10-${{ matrix.configuration }}-${{ matrix.platform }}
           path: artifacts/
           if-no-files-found: warn
           retention-days: 30
 
   build-msi:
-    runs-on: windows-latest
+    runs-on: windows-2022
     needs: build
-    if: always()
 
     steps:
       - name: Checkout repository
@@ -112,55 +144,79 @@ jobs:
       - name: Setup MSBuild
         uses: microsoft/setup-msbuild@v2
 
+      - name: Install WDK
+        shell: powershell
+        run: |
+          Write-Host "Downloading WDK 10.0.22621 setup..."
+          Invoke-WebRequest -Uri "https://go.microsoft.com/fwlink/?linkid=2196230" `
+            -OutFile "$env:TEMP\wdksetup.exe" -UseBasicParsing
+          Write-Host "Installing WDK..."
+          Start-Process -Wait -FilePath "$env:TEMP\wdksetup.exe" `
+            -ArgumentList "/features + /quiet /norestart /ceip off"
+          # Install VSIX if needed
+          $wdk = "${env:ProgramFiles(x86)}\Windows Kits\10"
+          $vs = "${env:ProgramFiles}\Microsoft Visual Studio\2022\Enterprise"
+          $vsixFiles = Get-ChildItem "$wdk\Vsix" -Filter "*.vsix" -Recurse -ErrorAction SilentlyContinue
+          $vsixInstaller = "$vs\Common7\IDE\VSIXInstaller.exe"
+          foreach ($vsix in $vsixFiles) {
+            Start-Process -Wait -PassThru -FilePath $vsixInstaller `
+              -ArgumentList "/q /a `"$($vsix.FullName)`"" | Out-Null
+          }
+
+      - name: Build all configurations for MSI
+        shell: cmd
+        run: |
+          echo Building Win10 Release x86...
+          msbuild UsbDk.sln /p:Configuration="Win10 Release" /p:Platform="Win32" /t:Rebuild /m
+          if %ERRORLEVEL% NEQ 0 exit /B 1
+
+          echo Building Win10 Release x64...
+          msbuild UsbDk.sln /p:Configuration="Win10 Release" /p:Platform="x64" /t:Rebuild /m
+          if %ERRORLEVEL% NEQ 0 exit /B 1
+
       - name: Install WiX Toolset
         shell: powershell
         run: |
-          choco install wixtoolset -y --no-progress
-          # Add WiX to PATH
-          $wixPath = "C:\Program Files (x86)\WiX Toolset v3.14\bin"
-          if (-not (Test-Path $wixPath)) {
-            $wixPath = "C:\Program Files (x86)\WiX Toolset v3.11\bin"
-          }
-          if (Test-Path $wixPath) {
-            Write-Host "WiX found at: $wixPath"
-            echo "WIX=$wixPath\" | Out-File -FilePath $env:GITHUB_ENV -Append
+          choco install wixtoolset --version=3.14.1 -y --no-progress
+          # Find WiX installation
+          $wixDir = Get-ChildItem "${env:ProgramFiles(x86)}" -Filter "WiX Toolset*" -Directory |
+            Sort-Object Name -Descending | Select-Object -First 1
+          if ($wixDir) {
+            $wixBin = Join-Path $wixDir.FullName "bin\"
+            Write-Host "WiX found at: $wixBin"
+            echo "WIX=$wixBin" | Out-File -FilePath $env:GITHUB_ENV -Append
           } else {
-            Write-Host "WiX not found, searching..."
-            Get-ChildItem "C:\Program Files (x86)" -Filter "WiX*" -Directory -ErrorAction SilentlyContinue |
-              ForEach-Object { Write-Host "  Found: $_" }
+            Write-Error "WiX Toolset not found"
           }
-
-      - name: Download all build artifacts
-        uses: actions/download-artifact@v4
-        with:
-          path: build-output/
 
       - name: Build MSI installer
-        if: always()
         shell: cmd
         run: |
-          echo Building MSI installer...
-          if defined WIX (
-            echo WiX path: %WIX%
-          ) else (
-            echo WiX not configured, skipping MSI build
-            exit /B 0
+          if not defined WIX (
+            echo WiX not configured, cannot build MSI
+            exit /B 1
           )
+          echo WiX path: %WIX%
           SET UsbDkVersion=%USBDK_MAJOR_VERSION%.%USBDK_MINOR_VERSION%.%USBDK_BUILD_NUMBER%
+
           mkdir Install\x86 2>nul
           mkdir Install\x64 2>nul
           mkdir Install_Debug\x86 2>nul
           mkdir Install_Debug\x64 2>nul
+
           pushd Tools\Installer
           call buildmsi.bat NOSIGN
+          if %ERRORLEVEL% NEQ 0 (
+            echo MSI build failed
+            exit /B 1
+          )
           popd
-        continue-on-error: true
 
-      - name: Upload MSI artifacts
-        if: always()
+      - name: Upload MSI installer
+        if: success()
         uses: actions/upload-artifact@v4
         with:
-          name: UsbDk-Installer-MSI
+          name: UsbDk-Installer
           path: |
             Install/**/*.msi
             Install_Debug/**/*.msi

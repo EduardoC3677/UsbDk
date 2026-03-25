@@ -71,7 +71,7 @@ static int Controller_AnalyzeInstallResult(InstallResult Res, const tstring &OpN
         tcout << OpName << TEXT(" succeeded but reboot is required in order to make it functional") << endl;
         return 2;
     case InstallAborted:
-        tcout << OpName << TEXT(" aborted, couln't start the driver on the system. Please make sure you are installing a signed version of UsbDk or else try to disable \"driver signature enforcement\" on the system") << endl;
+        tcout << OpName << TEXT(" aborted, couldn't start the driver on the system. Please make sure you are installing a signed version of UsbDk or else try to disable \"driver signature enforcement\" on the system") << endl;
         return 4;
     default:
         tcout << OpName << TEXT(" returned unknown error code") << endl;
@@ -211,7 +211,7 @@ static bool Controller_ParseIntRuleField(const TCHAR *Name, const TCHAR * Str, U
     else
     {
         tcout << TEXT("Invalid value for field \"") << Name << TEXT("\"") << endl;
-        return true;
+        return false;
     }
 }
 

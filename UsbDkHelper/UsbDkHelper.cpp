@@ -360,7 +360,6 @@ InstallResult ModifyPersistentHideRules(const USB_DK_HIDE_RULE &Rule,
 {
     try
     {
-        CRulesManager Manager;
         (CRulesManager().*Modifier)(Rule);
 
         UsbDkDriverAccess driver;
