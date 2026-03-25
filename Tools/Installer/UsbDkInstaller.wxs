@@ -156,8 +156,8 @@
 
     <InstallExecuteSequence>
       <RemoveExistingProducts After="InstallInitialize">PREVIOUSVERSIONSINSTALLED&lt;&gt;""</RemoveExistingProducts>
-      <Custom Action="InstallDriver" After="InstallFiles">NOT Installed</Custom>
-      <Custom Action="UninstallDriver" Before="RemoveFiles">REMOVE</Custom>
+      <Custom Action="UninstallDriver" Before="RemoveFiles">REMOVE="ALL" AND NOT UPGRADINGPRODUCTCODE</Custom>
+      <Custom Action="InstallDriver" After="InstallFiles">NOT Installed OR UPGRADINGPRODUCTCODE</Custom>
       <Custom Action="PreventDowngrading" After="FindRelatedProducts">NEWERVERSIONINSTALLED&lt;&gt;"" AND NOT Installed</Custom>
     </InstallExecuteSequence>
 

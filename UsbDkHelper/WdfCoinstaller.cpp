@@ -66,7 +66,7 @@ void WdfCoinstaller::loadWdfCoinstaller()
         m_pfnWdfPreDeviceInstallEx = getCoinstallerFunction<PFN_WDFPREDEVICEINSTALLEX>("WdfPreDeviceInstallEx");
         m_pfnWdfPostDeviceInstall = getCoinstallerFunction<PFN_WDFPOSTDEVICEINSTALL>("WdfPostDeviceInstall");
         m_pfnWdfPreDeviceRemove = getCoinstallerFunction<PFN_WDFPREDEVICEREMOVE>("WdfPreDeviceRemove");
-        m_pfnWdfPostDeviceRemove = getCoinstallerFunction<PFN_WDFPREDEVICEREMOVE>("WdfPostDeviceRemove");
+        m_pfnWdfPostDeviceRemove = getCoinstallerFunction<PFN_WDFPOSTDEVICEREMOVE>("WdfPostDeviceRemove");
     }
     catch (...)
     {

@@ -302,7 +302,7 @@ bool UsbDkInstaller::isWow64B()
             return false;
         }
     }
-    return bIsWow64 ? true : false;
+    return bIsWow64 != FALSE;
 }
 
 void UsbDkInstaller::verifyDriverCanStart()

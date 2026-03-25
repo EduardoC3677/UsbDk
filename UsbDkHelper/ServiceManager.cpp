@@ -77,7 +77,6 @@ void ServiceManager::StartServiceObject(const tstring &ServiceName)
     {
         throw UsbDkServiceManagerFailedException(TEXT("StartService failed"));
     }
-    return;
 }
 
 void ServiceManager::StopServiceObject(const tstring & ServiceName)

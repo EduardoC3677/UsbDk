@@ -57,8 +57,8 @@ private:
     PFN_WDFPREDEVICEREMOVE        m_pfnWdfPreDeviceRemove;
     PFN_WDFPOSTDEVICEREMOVE        m_pfnWdfPostDeviceRemove;
 
-    template< typename CallbackType>
-    CallbackType getCoinstallerFunction(char *functionName)
+    template<typename CallbackType>
+    CallbackType getCoinstallerFunction(const char *functionName)
     {
         auto ptfFunction = (CallbackType)GetProcAddress(m_wdfCoinstallerLibrary, functionName);
         if (ptfFunction == nullptr)
